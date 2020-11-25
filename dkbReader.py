@@ -9,7 +9,7 @@ ignoreText = 'Diesen Eintrag ignorieren'
 
 
 def dkbReadCSV(fileName):
-    with codecs.open('dkbTest.csv','r','iso-8859-1') as csv_file:
+    with codecs.open(fileName,'r','iso-8859-1') as csv_file:
         csv_reader = list(csv.reader(csv_file, delimiter=';'))
         line_count_start = 7
         numRows = len(csv_reader)
@@ -51,14 +51,13 @@ def sort_csvdata(window):
     fileName = window.pathText.toPlainText()
     csvData = dkbReadCSV(fileName)
     results = iterate_csvdata(window, csvData)
-    test = 1
     return results
 
 
 def iterate_csvdata(window,csvData):
     results = {}
 
-    identifierDict = pickle.load(open("identifierDict.p", "rb"))
+    identifierDict = pickle.load(open("data/identifierDict.p", "rb"))
     identifiers = list(identifierDict.keys())
     identifiersAdded = False
     miscList =[''] # Liste mit 'Sonstiges'-Einträgen
@@ -72,16 +71,16 @@ def iterate_csvdata(window,csvData):
         searchText = auftraggeber.lower() + ', ' + verwendungszweck.lower()
 
         catFound = [identifierDict[key] for key in identifiers if -1 < searchText.find(key)]
-
+        displayText = date + ':\n' + auftraggeber + ';\n' + verwendungszweck + '\n' + str(betrag) + ' €'
 
         if 0 < betrag:
-            displayText = date + ':\n' + auftraggeber + ';\n' + verwendungszweck + '\n' + str(betrag) + ' €'
             resultIdent, chosenCat = findIncome(window, displayText)
             if resultIdent == 1:
                 results = addToResults(results, betrag, jahr, monat, 'Einnahmen', chosenCat)
             elif resultIdent == -1:
                 print('Aborted!')
                 break
+            print(str(counter) + ': ' + chosenCat + '(income)\n' + displayText + '\n')
         elif 0 < len(catFound):
             if 1 < len(catFound) and not all([catFound[0] == elm for elm in catFound]):
                 print('Multiple different identifiers found!')
@@ -89,9 +88,8 @@ def iterate_csvdata(window,csvData):
                 print(searchText)
                 print(', '.join(catFound))
             results = addToResults(results, betrag, jahr, monat, catFound[0], '')
-            print(str(counter) + ': ' + catFound[0])
+            print(str(counter) + ': ' + catFound[0] + '(auto identified)\n   ' + displayText + '\n')
         else:
-            displayText = date + ':\n' + auftraggeber + ';\n' + verwendungszweck + '\n' + str(betrag) + ' €'
             resultIdent, chosenCat, catIdent = findCat(window, displayText, miscList)
 
             # switch the user input
@@ -113,10 +111,10 @@ def iterate_csvdata(window,csvData):
             else:
                 print(str(counter) + ': Nothing')
                 continue
-            print(str(counter) + ': ' + chosenCat + ' (identification: ' + str(catIdent) + ')')
+            print(str(counter) + ': ' + chosenCat + ' (identification: ' + str(catIdent) + ')\n   ' + displayText + '\n')
 
     if identifiersAdded:
-        pickle.dump(identifierDict, open("identifierDict.p", "wb"))
+        pickle.dump(identifierDict, open("data/identifierDict.p", "wb"))
     return results
 
 
