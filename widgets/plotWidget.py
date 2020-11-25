@@ -14,12 +14,19 @@ class PlotWidget(QtCharts.QChartView):
     def __init__(self, parent=None):
         QtCharts.QChartView.__init__(self, parent)
         self.results = None
+        self.selection = None
 
 
     @Slot()
     def redrawPlot(self):
         if self.results is None:
             print('No results - nothing is drawn')
+            return
+        elif self.selection is None:
+            print('No selection - nothing is drawn')
+            return
+        elif all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+            print('Nothing selected - nothing is drawn')
             return
 
         chart = QtCharts.QChart()
@@ -33,12 +40,12 @@ class PlotWidget(QtCharts.QChartView):
         categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
         axisX = QtCharts.QBarCategoryAxis()
         axisX.append(categories)
-        chart.setAxisX(axisX, lineSeries)
+        # chart.setAxisX(axisX, lineSeries)
         chart.setAxisX(axisX, barSeries)
         axisX.setRange("Jan", "Jun")
 
         axisY = QtCharts.QValueAxis()
-        chart.setAxisY(axisY, lineSeries)
+        # chart.setAxisY(axisY, lineSeries)
         chart.setAxisY(axisY, barSeries)
         axisY.setRange(0, 20)
 
@@ -47,19 +54,24 @@ class PlotWidget(QtCharts.QChartView):
 
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)
+        # draw the plot from scratch (if that makes a difference)
+
+    @Slot()
+    def updatePlot(self):
+        #only change plot parameters, not the underlying data
+        test=1
 
 
-    def findCategories(self):
-        if self.results is None:
+    def findCategories(self, results):
+        if results is None:
             print('No results - no categories found')
             return []
         catSet = set()
-        for year in list(self.results.keys()):
-            for month in list(self.results[year].keys()):
-                for cat in list(self.results[year][month].keys()):
+        for year in list(results.keys()):
+            for month in list(results[year].keys()):
+                for cat in list(results[year][month].keys()):
                     catSet.add(cat)
-        catList = list(catSet)
-
+        catList = sorted(list(catSet), key=self.sortCats)
         return catList
 
 
