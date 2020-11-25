@@ -1,11 +1,12 @@
 import csv
 import codecs
 from PySide2.QtWidgets import QInputDialog, QLineEdit, QMessageBox
-from PySide2.QtCore import QDir
-#from window import widgetWindow
 import pickle
 
 ignoreText = 'Diesen Eintrag ignorieren'
+
+#TODO: Ignore-list anlegen
+#TODO: suggest-List (für zb amazon oder Gehalt) anlegen
 
 
 def dkbReadCSV(fileName):
@@ -76,7 +77,7 @@ def iterate_csvdata(window,csvData):
         if 0 < betrag:
             resultIdent, chosenCat = findIncome(window, displayText)
             if resultIdent == 1:
-                results = addToResults(results, betrag, jahr, monat, 'Einnahmen', chosenCat)
+                results = addToResults(results, bch, betrag, jahr, monat, 'Einnahmen', chosenCat)
             elif resultIdent == -1:
                 print('Aborted!')
                 break
@@ -87,7 +88,7 @@ def iterate_csvdata(window,csvData):
                 print(date)
                 print(searchText)
                 print(', '.join(catFound))
-            results = addToResults(results, betrag, jahr, monat, catFound[0], '')
+            results = addToResults(results, bch, -betrag, jahr, monat, catFound[0], '')
             print(str(counter) + ': ' + catFound[0] + '(auto identified)\n   ' + displayText + '\n')
         else:
             resultIdent, chosenCat, catIdent = findCat(window, displayText, miscList)
@@ -98,13 +99,13 @@ def iterate_csvdata(window,csvData):
                 identifiers.append(catIdent.lower())
                 if not identifiersAdded:
                     identifiersAdded = True
-                results = addToResults(results, betrag, jahr, monat, chosenCat, '')
+                results = addToResults(results, bch, -betrag, jahr, monat, chosenCat, '')
             elif resultIdent == 2: # Too singular, no identifiers added
-                results = addToResults(results, betrag, jahr, monat, chosenCat, '')
+                results = addToResults(results, bch, -betrag, jahr, monat, chosenCat, '')
             elif resultIdent == 3: # Sonstiges
                 if catIdent not in miscList:
                     miscList.append(catIdent)
-                results = addToResults(results, betrag, jahr, monat, chosenCat, catIdent)
+                results = addToResults(results, bch, -betrag, jahr, monat, chosenCat, catIdent)
             elif resultIdent == -1:
                 print('Aborted!')
                 break
@@ -118,36 +119,42 @@ def iterate_csvdata(window,csvData):
     return results
 
 
-def addToResults(results, betrag, jahr, monat, cat, catIdent):
+def addToResults(results, bch, betrag, jahr, monat, cat, catIdent):
     if jahr in results:
         if monat in results[jahr]:
             if cat in results[jahr][monat]:
-                if catIdent == '':
-                    results[jahr][monat][cat] += betrag
-                elif catIdent in results[jahr][monat][cat]:
-                    results[jahr][monat][cat][catIdent] += betrag
+                if not catIdent == '':
+                    if catIdent not in results[jahr][monat][cat]:
+                        results[jahr][monat][cat][catIdent] = {'sum': 0, 'bch': []}
             elif not catIdent == '':
                 results[jahr][monat][cat] = {}
-                results[jahr][monat][cat][catIdent] = betrag
+                results[jahr][monat][cat][catIdent] = {'sum': 0, 'bch': []}
             else:
-                results[jahr][monat][cat] = betrag
+                results[jahr][monat][cat] = {'sum': 0, 'bch': []}
         elif not catIdent == '':
             results[jahr][monat] = {}
             results[jahr][monat][cat] = {}
-            results[jahr][monat][cat][catIdent] = betrag
+            results[jahr][monat][cat][catIdent] = {'sum': 0, 'bch': []}
         else:
             results[jahr][monat] = {}
-            results[jahr][monat][cat] = betrag
+            results[jahr][monat][cat] = {'sum': 0, 'bch': []}
 
     elif not catIdent == '':
         results[jahr] = {}
         results[jahr][monat] = {}
         results[jahr][monat][cat] = {}
-        results[jahr][monat][cat][catIdent] = betrag
+        results[jahr][monat][cat][catIdent] = {'sum': 0, 'bch': []}
     else:
         results[jahr] = {}
         results[jahr][monat] = {}
-        results[jahr][monat][cat] = betrag
+        results[jahr][monat][cat] = {'sum': 0, 'bch': []}
+
+    if catIdent == '':
+        results[jahr][monat][cat]['sum'] += betrag
+        results[jahr][monat][cat]['bch'].append(bch)
+    else:
+        results[jahr][monat][cat][catIdent]['sum'] += betrag
+        results[jahr][monat][cat][catIdent]['bch'].append(bch)
     return results
 
 
