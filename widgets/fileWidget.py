@@ -15,13 +15,19 @@ class FileWidget(QtWidgets.QWidget):
 
         ## FILE SEARCH WIDGETS ##
         self.csvSearchButton = QtWidgets.QPushButton(".csv-Datei auswählen")
+        self.csvSearchButton.setMaximumWidth(250)
         self.resultsButton = QtWidgets.QPushButton("Datei auswerten")
+        self.resultsButton.setMaximumWidth(250)
         self.loadResultsButton = QtWidgets.QPushButton("Auswertung laden")
+        self.loadResultsButton.setMaximumWidth(250)
         self.pathText = QtWidgets.QTextEdit("")
         self.pathText.setReadOnly(True)
         self.pathText.setFixedHeight(self.pathText.size().height() / 8)
+        self.pathText.setMaximumWidth(250)
         self.pathLabel = QtWidgets.QLabel("Pfad")
+        self.pathLabel.setFixedWidth(50)
         self.orLabel = QtWidgets.QLabel("ODER")
+        self.orLabel.setFixedWidth(250)
 
         ## LAYOUT ##
         gridLayout = QtWidgets.QGridLayout()
@@ -29,7 +35,7 @@ class FileWidget(QtWidgets.QWidget):
         gridLayout.addWidget(self.pathLabel, 1, 0, 1, 1)
         gridLayout.addWidget(self.pathText, 1, 1, 1, 3)
         gridLayout.addWidget(self.resultsButton, 2, 1, 1, 3)
-        gridLayout.addWidget(self.orLabel, 3, 2, 1, 2)
+        gridLayout.addWidget(self.orLabel, 3, 0, 1, 4)
         gridLayout.addWidget(self.loadResultsButton, 4, 1, 1, 3)
 
         self.setLayout(gridLayout)

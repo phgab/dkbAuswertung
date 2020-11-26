@@ -3,6 +3,7 @@ from PySide2.QtCore import Signal, Slot
 
 class SelectionWidget(QtWidgets.QWidget):
     checkboxChanged = Signal(dict)
+    treeUpdated = Signal()
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -11,19 +12,23 @@ class SelectionWidget(QtWidgets.QWidget):
         ## TREE VIEW WIDGETS ##
         mainTree = QtWidgets.QTreeWidget()
         mainTree.setHeaderLabels(["Jahr", "Monat"])
-        mainTree.itemChanged.connect(self.childCheckChanged)
         mainTree.setVisible(False)
         mainTree.setMinimumHeight(200)
+        mainTree.setMaximumWidth(300)
         # mainTree.setMaximumHeight(1000)
         self.mainTree = mainTree
 
-        self.plotButton = QtWidgets.QPushButton("Daten plotten")
-        self.plotButton.setVisible(False)
+        self.mergeButton = QtWidgets.QPushButton("Gesamtdaten ergänzen")
+        self.mergeButton.setMaximumWidth(300)
+        self.mergeButton.setVisible(False)
+
+        ## SIGNALS / SLOTS
+        mainTree.itemChanged.connect(self.childCheckChanged)
 
         ## LAYOUT ##
         # Do I Really need to do this?!
         treeLayout = QtWidgets.QVBoxLayout()
-        treeLayout.addWidget(self.plotButton)
+        treeLayout.addWidget(self.mergeButton)
         treeLayout.addWidget(mainTree)
         self.setLayout(treeLayout)
 
@@ -73,13 +78,14 @@ class SelectionWidget(QtWidgets.QWidget):
                 yearCheckbox.addChild(monthCheckbox)
         if not self.mainTree.isVisible():
             self.mainTree.setVisible(True)
-        if not self.plotButton.isVisible():
+        if not self.mergeButton.isVisible():
             if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
-                self.plotButton.setVisible(True)
+                self.mergeButton.setVisible(True)
         else:
             if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
-                self.plotButton.setVisible(False)
+                self.mergeButton.setVisible(False)
 
+        self.treeUpdated.emit()
 
     @Slot()
     def childCheckChanged(self, item, column):
@@ -93,12 +99,12 @@ class SelectionWidget(QtWidgets.QWidget):
                 value = False
             self.selection[year][month] = value
             # print(str([year, month, value]))
-            if not self.plotButton.isVisible():
+            if not self.mergeButton.isVisible():
                 if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
-                    self.plotButton.setVisible(True)
+                    self.mergeButton.setVisible(True)
             else:
                 if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
-                    self.plotButton.setVisible(False)
+                    self.mergeButton.setVisible(False)
 
             self.checkboxChanged.emit(self.selection)
             # return [year, month, value]

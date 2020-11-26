@@ -3,7 +3,7 @@ from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
 from PySide2.QtCore import QPoint, Qt
 from PySide2.QtGui import QPainter
-from PySide2.QtWidgets import QMainWindow, QApplication
+from PySide2.QtWidgets import QSizePolicy
 from PySide2.QtCharts import QtCharts
 import datetime
 import pickle
@@ -21,6 +21,9 @@ class PlotWidget(QtCharts.QChartView):
         self.plotDataTags = None
         self.barSets = None
 
+        self.setMinimumWidth(600)
+        self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        self.setVisible(False)
         self.sgn_redrawPlot.connect(self.redrawPlot)
 
 
@@ -31,30 +34,47 @@ class PlotWidget(QtCharts.QChartView):
         self.createDatasets()
         self.sgn_redrawPlot.emit()
 
+    @Slot()
+    def updateSelection(self, selection):
+        self.selection = selection
+        self.createDatasets()
+        self.sgn_redrawPlot.emit()
+
 
     def createDatasets(self):
         if self.results is None:
             print('No results - no data is calculated')
+            if self.isVisible():
+                self.setVisible(False)
             return
         elif self.selection is None:
             print('No selection - no data is calculated')
+            if self.isVisible():
+                self.setVisible(False)
             return
         elif all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
             print('Nothing selected - no data is calculated')
+            if self.isVisible():
+                self.setVisible(False)
             return
-
+        # If no interrupt, set visible
+        if not self.isVisible():
+            self.setVisible(True)
 
         catList = self.findCategories(self.results)
         newData = {cat:[] for cat in catList}
         dataTags = []
         for year in list(self.selection.keys()):
             for month in list(self.selection[year].keys()):
+                if not self.selection[year][month]:
+                    continue
                 for cat in catList:
-                    if cat in self.results[year][month]:
-                        if 'sum' in self.results[year][month][cat]:
-                            newData[cat].append(self.results[year][month][cat]['sum'])
+                    if cat in self.results[int(year)][month]:
+                        if 'sum' in self.results[int(year)][month][cat]:
+                            newData[cat].append(self.results[int(year)][month][cat]['sum'])
                         else:
-                            newData[cat].append(sum([catIdent['sum'] for catIdent in self.results[year][month][cat]]))
+                            newData[cat].append(sum([self.results[int(year)][month][cat][catIdent]['sum']
+                                                     for catIdent in self.results[int(year)][month][cat]]))
                     else:
                         newData[cat].append(0)
                 dataTags.append(month + ' ' + year)
@@ -118,7 +138,8 @@ class PlotWidget(QtCharts.QChartView):
         for year in list(results.keys()):
             for month in list(results[year].keys()):
                 for cat in list(results[year][month].keys()):
-                    catSet.add(cat)
+                    if not cat == "Einnahmen":
+                        catSet.add(cat)
         catList = sorted(list(catSet), key=self.sortCats)
         return catList
 
