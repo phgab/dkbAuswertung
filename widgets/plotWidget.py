@@ -10,11 +10,56 @@ import pickle
 
 
 class PlotWidget(QtCharts.QChartView):
+    sgn_redrawPlot = Signal()
+    sgn_updatePlot = Signal()
 
     def __init__(self, parent=None):
         QtCharts.QChartView.__init__(self, parent)
         self.results = None
         self.selection = None
+        self.plotData = None
+        self.plotDataTags = None
+        self.barSets = None
+
+        self.sgn_redrawPlot.connect(self.redrawPlot)
+
+
+    @Slot()
+    def updateData(self, results, selection):
+        self.results = results
+        self.selection = selection
+        self.createDatasets()
+        self.sgn_redrawPlot.emit()
+
+
+    def createDatasets(self):
+        if self.results is None:
+            print('No results - no data is calculated')
+            return
+        elif self.selection is None:
+            print('No selection - no data is calculated')
+            return
+        elif all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+            print('Nothing selected - no data is calculated')
+            return
+
+
+        catList = self.findCategories(self.results)
+        newData = {cat:[] for cat in catList}
+        dataTags = []
+        for year in list(self.selection.keys()):
+            for month in list(self.selection[year].keys()):
+                for cat in catList:
+                    if cat in self.results[year][month]:
+                        if 'sum' in self.results[year][month][cat]:
+                            newData[cat].append(self.results[year][month][cat]['sum'])
+                        else:
+                            newData[cat].append(sum([catIdent['sum'] for catIdent in self.results[year][month][cat]]))
+                    else:
+                        newData[cat].append(0)
+                dataTags.append(month + ' ' + year)
+        self.plotData = newData
+        self.plotDataTags = dataTags
 
 
     @Slot()
@@ -31,26 +76,29 @@ class PlotWidget(QtCharts.QChartView):
 
         chart = QtCharts.QChart()
 
-        set0 = QtCharts.QBarSet("Jane")
+        barSets = []
         barSeries = QtCharts.QBarSeries()
-        barSeries.append(set0)
+        for cat in list(self.plotData.keys()):
+            set = QtCharts.QBarSet(cat)
+            set.append(self.plotData[cat])
+            barSets.append(set)
+            barSeries.append(set)
+        self.barSets = barSets
 
         chart.addSeries(barSeries)
-        chart.setTitle("Line and barchart example")
-        categories = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+        chart.setTitle("Ausgaben")
         axisX = QtCharts.QBarCategoryAxis()
-        axisX.append(categories)
-        # chart.setAxisX(axisX, lineSeries)
+        axisX.append(self.plotDataTags)
         chart.setAxisX(axisX, barSeries)
-        axisX.setRange("Jan", "Jun")
+        #axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
 
         axisY = QtCharts.QValueAxis()
         # chart.setAxisY(axisY, lineSeries)
         chart.setAxisY(axisY, barSeries)
-        axisY.setRange(0, 20)
+        #axisY.setRange(0, 20)
 
         chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignBottom)
+        chart.legend().setAlignment(Qt.AlignRight)
 
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)

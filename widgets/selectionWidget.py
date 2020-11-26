@@ -17,9 +17,13 @@ class SelectionWidget(QtWidgets.QWidget):
         # mainTree.setMaximumHeight(1000)
         self.mainTree = mainTree
 
+        self.plotButton = QtWidgets.QPushButton("Daten plotten")
+        self.plotButton.setVisible(False)
+
         ## LAYOUT ##
         # Do I Really need to do this?!
-        treeLayout = QtWidgets.QHBoxLayout()
+        treeLayout = QtWidgets.QVBoxLayout()
+        treeLayout.addWidget(self.plotButton)
         treeLayout.addWidget(mainTree)
         self.setLayout(treeLayout)
 
@@ -69,6 +73,12 @@ class SelectionWidget(QtWidgets.QWidget):
                 yearCheckbox.addChild(monthCheckbox)
         if not self.mainTree.isVisible():
             self.mainTree.setVisible(True)
+        if not self.plotButton.isVisible():
+            if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                self.plotButton.setVisible(True)
+        else:
+            if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                self.plotButton.setVisible(False)
 
 
     @Slot()
@@ -83,6 +93,13 @@ class SelectionWidget(QtWidgets.QWidget):
                 value = False
             self.selection[year][month] = value
             # print(str([year, month, value]))
+            if not self.plotButton.isVisible():
+                if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                    self.plotButton.setVisible(True)
+            else:
+                if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                    self.plotButton.setVisible(False)
+
             self.checkboxChanged.emit(self.selection)
             # return [year, month, value]
 
