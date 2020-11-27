@@ -22,6 +22,13 @@ class SelectionWidget(QtWidgets.QWidget):
         self.mergeButton.setMaximumWidth(300)
         self.mergeButton.setVisible(False)
 
+        self.plotSelection = QtWidgets.QComboBox()
+        self.plotChoices = ['Ausgaben: Kategorien', 'Rücklagen', 'Ausgaben vs. Einnahmen', 'Ausgaben: Sonstiges']
+        for plot in self.plotChoices:
+            self.plotSelection.addItem(plot)
+        self.plotSelection.setMaximumWidth(300)
+        self.plotSelection.setVisible(False)
+
         ## SIGNALS / SLOTS
         mainTree.itemChanged.connect(self.childCheckChanged)
 
@@ -30,6 +37,7 @@ class SelectionWidget(QtWidgets.QWidget):
         treeLayout = QtWidgets.QVBoxLayout()
         treeLayout.addWidget(self.mergeButton)
         treeLayout.addWidget(mainTree)
+        treeLayout.addWidget(self.plotSelection)
         self.setLayout(treeLayout)
 
 
@@ -41,7 +49,7 @@ class SelectionWidget(QtWidgets.QWidget):
     @Slot()
     def updateTree(self, results):
         # To ease writing further on
-        checkDict = {False: QtCore.Qt.CheckState.Unchecked, True: QtCore.Qt.CheckState.Checked}
+        checkDict = {False: QtCore.Qt.CheckState.Unchecked, True: QtCore.Qt.CheckState.Checked, 3: QtCore.Qt.CheckState.PartiallyChecked}
 
         # Read keys
         newSelect = {}
@@ -69,6 +77,18 @@ class SelectionWidget(QtWidgets.QWidget):
         for year in years:
             yearCheckbox = QtWidgets.QTreeWidgetItem()
             yearCheckbox.setText(0, year)
+            yearCheckbox.setCheckState(0, checkDict[False])
+            # yearCheckbox.setFlags(QtCore.Qt.ItemIsAutoTristate)
+            yearCheckbox.setFlags(yearCheckbox.flags() | QtCore.Qt.ItemIsAutoTristate | QtCore.Qt.ItemIsUserCheckable)
+            # yearCheckbox.setTristate(True)
+            if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                yearCheckbox.setCheckState(0, checkDict[False])
+            elif not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
+                yearCheckbox.setCheckState(0, checkDict[True])
+            else:
+                test = 1
+                # yearCheckbox.setCheckState(0, checkDict[3])
+
             self.mainTree.addTopLevelItem(yearCheckbox)
             months = list(self.selection[year].keys())
             for month in months:
@@ -81,9 +101,11 @@ class SelectionWidget(QtWidgets.QWidget):
         if not self.mergeButton.isVisible():
             if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                 self.mergeButton.setVisible(True)
+                self.plotSelection.setVisible(True)
         else:
             if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                 self.mergeButton.setVisible(False)
+                self.plotSelection.setVisible(False)
 
         self.treeUpdated.emit()
 
@@ -91,20 +113,35 @@ class SelectionWidget(QtWidgets.QWidget):
     def childCheckChanged(self, item, column):
         if column == 0:
             parent = item.parent()
+            if parent is None:
+                # if not item.checkState(0) == QtCore.Qt.CheckState.PartiallyChecked:
+                #     self.checkboxChanged.emit(self.selection)
+                return
             year = parent.text(0)
             month = item.text(1)
             if item.checkState(0) == QtCore.Qt.CheckState.Checked:
                 value = True
             else:
                 value = False
-            self.selection[year][month] = value
+            if month == '':
+                test = 1
+            else:
+                self.selection[year][month] = value
+
             # print(str([year, month, value]))
             if not self.mergeButton.isVisible():
                 if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                     self.mergeButton.setVisible(True)
+                    self.plotSelection.setVisible(True)
             else:
                 if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                     self.mergeButton.setVisible(False)
+                    self.plotSelection.setVisible(False)
+
+            if not parent.checkState(0) == QtCore.Qt.CheckState.PartiallyChecked:
+                state = item.checkState(0)
+                if not all([state == childstate for childstate in [parent.child(idx).checkState(0) for idx in range(parent.childCount())]]):
+                    return
 
             self.checkboxChanged.emit(self.selection)
             # return [year, month, value]

@@ -2,10 +2,9 @@ import os
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
 from PySide2.QtCore import QPoint, Qt
-from PySide2.QtGui import QPainter
+from PySide2.QtGui import QPainter, QFont
 from PySide2.QtWidgets import QSizePolicy
 from PySide2.QtCharts import QtCharts
-import datetime
 import pickle
 
 
@@ -19,7 +18,9 @@ class PlotWidget(QtCharts.QChartView):
         self.selection = None
         self.plotData = None
         self.plotDataTags = None
+        self.sumData = None
         self.barSets = None
+        self.currentPlot = 0
 
         self.setMinimumWidth(600)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -39,6 +40,13 @@ class PlotWidget(QtCharts.QChartView):
         self.selection = selection
         self.createDatasets()
         self.sgn_redrawPlot.emit()
+
+
+    @Slot()
+    def plotSelector(self, plotNr):
+        self.currentPlot = plotNr
+        self.redrawPlot()
+        # print('Plot no. ' + str(plotNr) + ' selected.')
 
 
     def createDatasets(self):
@@ -78,8 +86,23 @@ class PlotWidget(QtCharts.QChartView):
                     else:
                         newData[cat].append(0)
                 dataTags.append(month + ' ' + year)
+
+        numTags = len(dataTags)
+        newSumData = {'exp': [0]*numTags, 'inc': [0]*numTags, 'sav': [0]*numTags}
+        for idx in range(numTags):
+            for cat in list(newData.keys()):
+                if cat == "Einnahmen":
+                    newSumData['inc'][idx] += newData[cat][idx]
+                else:
+                    newSumData['exp'][idx] += newData[cat][idx]
+            if idx == 0:
+                newSumData['sav'][idx] = newSumData['inc'][idx] - newSumData['exp'][idx]
+            else:
+                newSumData['sav'][idx] = newSumData['sav'][idx-1] + newSumData['inc'][idx] - newSumData['exp'][idx]
+
         self.plotData = newData
         self.plotDataTags = dataTags
+        self.sumData = newSumData
 
 
     @Slot()
@@ -94,28 +117,48 @@ class PlotWidget(QtCharts.QChartView):
             print('Nothing selected - nothing is drawn')
             return
 
+        if self.currentPlot == 0:
+            self.plotAllExpenseBars()
+        elif self.currentPlot == 1:
+            self.plotSavingsBars()
+        else:
+            print('Invalid plot no. selected - nothing is drawn')
+
+
+    def plotAllExpenseBars(self):
         chart = QtCharts.QChart()
 
         barSets = []
         barSeries = QtCharts.QBarSeries()
         for cat in list(self.plotData.keys()):
-            set = QtCharts.QBarSet(cat)
-            set.append(self.plotData[cat])
-            barSets.append(set)
-            barSeries.append(set)
+            if cat == "Einnahmen":
+                continue
+            barSet = QtCharts.QBarSet(cat)
+            barSet.append(self.plotData[cat])
+            barSets.append(barSet)
+            barSeries.append(barSet)
         self.barSets = barSets
 
         chart.addSeries(barSeries)
+
+        titleFont = QFont("Sans Serif")
+        titleFont.setPointSize(16)
+        titleFont.setBold(True)
+        chart.setTitleFont(titleFont)
         chart.setTitle("Ausgaben")
+
         axisX = QtCharts.QBarCategoryAxis()
         axisX.append(self.plotDataTags)
         chart.setAxisX(axisX, barSeries)
-        #axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
+        # axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
 
         axisY = QtCharts.QValueAxis()
+        axisY.setLabelFormat("%i")
+        axisY.setTitleText("€")
+        axisY.applyNiceNumbers()
         # chart.setAxisY(axisY, lineSeries)
         chart.setAxisY(axisY, barSeries)
-        #axisY.setRange(0, 20)
+        # axisY.setRange(0, 20)
 
         chart.legend().setVisible(True)
         chart.legend().setAlignment(Qt.AlignRight)
@@ -123,6 +166,56 @@ class PlotWidget(QtCharts.QChartView):
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)
         # draw the plot from scratch (if that makes a difference)
+        print('Expense bar plot drawn')
+
+    def plotSavingsBars(self):
+        chart = QtCharts.QChart()
+
+        # barSets = []
+        barSeries = QtCharts.QBarSeries()
+        expSet = QtCharts.QBarSet('Ausgaben')
+        expSet.append(self.sumData['exp'])
+        barSeries.append(expSet)
+
+        incSet = QtCharts.QBarSet('Einnahmen')
+        incSet.append(self.sumData['inc'])
+        barSeries.append(incSet)
+
+        savSet = QtCharts.QBarSet('Rücklagen')
+        savSet.append(self.sumData['sav'])
+        barSeries.append(savSet)
+
+        # self.barSets = barSets
+
+        chart.addSeries(barSeries)
+        titleFont = QFont("Sans Serif")
+        titleFont.setPointSize(16)
+        titleFont.setBold(True)
+
+        chart.setTitleFont(titleFont)
+        chart.setTitle("Rücklagen")
+
+        axisX = QtCharts.QBarCategoryAxis()
+        axisX.append(self.plotDataTags)
+        chart.setAxisX(axisX, barSeries)
+        # axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
+
+        axisY = QtCharts.QValueAxis()
+        axisY.setLabelFormat("%i")
+        axisY.setTitleText("€")
+        axisY.applyNiceNumbers()
+        # chart.setAxisY(axisY, lineSeries)
+        chart.setAxisY(axisY, barSeries)
+        # axisY.setRange(0, 20)
+
+        chart.legend().setVisible(True)
+        chart.legend().setAlignment(Qt.AlignRight)
+
+        self.setChart(chart)
+        self.setRenderHint(QPainter.Antialiasing)
+        # draw the plot from scratch (if that makes a difference)
+        print('Expense bar plot drawn')
+
 
     @Slot()
     def updatePlot(self):
@@ -138,18 +231,24 @@ class PlotWidget(QtCharts.QChartView):
         for year in list(results.keys()):
             for month in list(results[year].keys()):
                 for cat in list(results[year][month].keys()):
-                    if not cat == "Einnahmen":
-                        catSet.add(cat)
+                    catSet.add(cat)
         catList = sorted(list(catSet), key=self.sortCats)
         return catList
 
 
-    def sortCats(self, str):
+    def sortCats(self, text):
         try:
-            orderList = pickle.load("data/catOrderList.p", "rb")
+            orderList = pickle.load(open("data/catOrderList.p", "rb"))
             for num, cat in enumerate(orderList):
-                if str == cat:
-                    return num
-            return len(orderList)
+                if text == cat:
+                    return str(num)
+            return str(len(orderList)) + text[0:3]
         except:
-            return str
+            return text
+
+
+    def computeExpenseSums(self):
+        test = 1
+
+    def computeSavings(self):
+        test = 1

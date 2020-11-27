@@ -33,6 +33,7 @@ class MainWidget(QtWidgets.QWidget):
         self.selectionWidget.treeUpdated.connect(self.transferPlotData)
         self.updatePlotData.connect(self.plotWidget.updateData)
         self.selectionWidget.checkboxChanged.connect(self.plotWidget.updateSelection)
+        self.selectionWidget.plotSelection.currentIndexChanged.connect(self.plotWidget.plotSelector)
 
 
     @Slot()

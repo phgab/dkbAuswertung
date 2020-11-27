@@ -28,6 +28,7 @@ class FileWidget(QtWidgets.QWidget):
         self.pathLabel.setFixedWidth(50)
         self.orLabel = QtWidgets.QLabel("ODER")
         self.orLabel.setFixedWidth(250)
+        self.orLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         ## LAYOUT ##
         gridLayout = QtWidgets.QGridLayout()
@@ -91,7 +92,19 @@ class FileWidget(QtWidgets.QWidget):
 
 
     def saveResults(self, results):
-        if os.path.isfile("data/lastResults.p"):
-            currentDate = datetime.datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
-            os.rename(r"data/lastResults.p", r"data/oldResults_" + currentDate + ".p")
-        pickle.dump(results, open("data/lastResults.p", "wb"))
+        msg = QtWidgets.QMessageBox()
+        msg.setIcon(QtWidgets.QMessageBox.Question)
+
+        msg.setText("Soll die Auswertung gespeichert werden?")
+        msg.setWindowTitle("DKB Auswertung")
+        yesButton = msg.addButton('Ja',QtWidgets.QMessageBox.YesRole)
+        msg.addButton('Nein', QtWidgets.QMessageBox.NoRole)
+        msg.setDefaultButton(yesButton)
+
+        retval = msg.exec_()
+
+        if retval == 0:
+            if os.path.isfile("data/lastResults.p"):
+                currentDate = datetime.datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
+                os.rename(r"data/lastResults.p", r"data/oldResults_" + currentDate + ".p")
+            pickle.dump(results, open("data/lastResults.p", "wb"))

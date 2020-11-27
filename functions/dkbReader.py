@@ -5,8 +5,7 @@ import pickle
 
 ignoreText = 'Diesen Eintrag ignorieren'
 
-#TODO: Ignore-list anlegen
-#TODO: suggest-List (für zb amazon oder Gehalt) anlegen
+
 
 
 def dkbReadCSV(fileName):
@@ -78,10 +77,13 @@ def iterate_csvdata(window,csvData):
             resultIdent, chosenCat = findIncome(window, displayText)
             if resultIdent == 1:
                 results = addToResults(results, bch, betrag, jahr, monat, 'Einnahmen', chosenCat)
+                print(str(counter) + ': ' + chosenCat + '(income)\n' + displayText + '\n')
+            elif resultIdent == 0:
+                print(str(counter) + ': Ignored')
             elif resultIdent == -1:
                 print('Aborted!')
                 break
-            print(str(counter) + ': ' + chosenCat + '(income)\n' + displayText + '\n')
+
         elif 0 < len(catFound):
             if 1 < len(catFound) and not all([catFound[0] == elm for elm in catFound]):
                 print('Multiple different identifiers found!')
@@ -163,10 +165,22 @@ def findCat(window, displayText, miscList):
         catText = 'Zur folgenden Buchung wurde keine Kategorie gefunden:\n' + \
             displayText + '\nIn welche Kategorie passt die Buchung?'
         categories = getCategories()
-        if -1 < displayText.lower().find('amazon'):
-            startIdx = categories.index('Sonstiges')
-        else:
-            startIdx = 0
+        suggestList = pickle.load(open("data/suggestList.p", "rb"))
+        suggestFound = False
+        startIdx = 0
+        for itm in list(suggestList.keys()):
+            if -1 < displayText.lower().find(itm.lower()):
+                try:
+                    startIdx = categories.index(suggestList[itm][0])
+                    suggestFound = True
+                except:
+                    continue
+
+                try:
+                    suggestCatIdent = suggestList[itm][1]
+                except:
+                    pass
+                break
 
         chosenCat, ok = QInputDialog().getItem(window, "DKB Auswertung",
                                                catText, categories, startIdx, False)
@@ -192,15 +206,11 @@ def findCat(window, displayText, miscList):
                 return [2, chosenCat, 0] # Nicht ergänzen
         elif ok and chosenCat == "Sonstiges":
             identText = 'Was soll als Beschreibung zu Sonstiges angezeigt werden?\n' + displayText
-            # Amazon special thingy
-            if -1 < displayText.lower().find('amazon'):
-                if 'Amazon' in miscList:
-                    startIdx = miscList.index('Amazon')
-                elif 'amazon' in miscList:
-                    startIdx = miscList.index('amazon')
-                else:
-                    miscList.append('Amazon')
-                    startIdx = miscList.index('Amazon')
+            # Handle suggestions
+            if suggestFound:
+                if suggestCatIdent not in miscList:
+                    miscList.append(suggestCatIdent)
+                startIdx = miscList.index(suggestCatIdent)
             else:
                 startIdx = 0
             catIdent, ok = QInputDialog().getItem(window, "DKB Auswertung",
@@ -224,8 +234,18 @@ def findIncome(window, displayText):
         incomeOptions = ['Gehalt Georg', 'Gehalt Franzi', 'BAFöG', 'Erstattung Versicherung',
                          'Unterhalt', ignoreText]
 
+        suggestList = pickle.load(open("data/suggestList.p", "rb"))
+        startIdx = 0
+        for itm in list(suggestList.keys()):
+            if -1 < displayText.lower().find(itm.lower()):
+                try:
+                    startIdx = incomeOptions.index(suggestList[itm][0])
+                    break
+                except:
+                    pass
+
         chosenCat, ok = QInputDialog().getItem(window, "DKB Auswertung",
-                                               catText, incomeOptions, 0, True)
+                                               catText, incomeOptions, startIdx, True)
 
         if ok and not chosenCat == '' and not chosenCat == ignoreText:
             return [1, chosenCat]
@@ -245,12 +265,13 @@ def abortDialog():
     msg.setInformativeText("Keine Auswertung wird erstellt.\n" +
                            "Wenn dieses Fenster abgebrochen wird, wird der Dialog wiederholt.")
     msg.setWindowTitle("DKB Auswertung")
-    msg.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
-    msg.setDefaultButton(QMessageBox.Cancel)
+    yesButton = msg.addButton('Ja', QMessageBox.YesRole)
+    msg.addButton('Nein', QMessageBox.NoRole)
+    msg.setDefaultButton(yesButton)
 
     retval = msg.exec_()
 
-    if retval == QMessageBox.Ok:
+    if retval == 0:
         return True
     else:
         return False
