@@ -5,6 +5,8 @@ from functions.dkbReader import sort_csvdata
 import datetime
 import pickle
 
+#TODO: Create merge function
+
 class FileWidget(QtWidgets.QWidget):
     pathChanged = Signal(str)
     updateTree = Signal(dict)
