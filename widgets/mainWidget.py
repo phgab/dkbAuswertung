@@ -5,6 +5,7 @@ import datetime
 from widgets.fileWidget import FileWidget
 from widgets.selectionWidget import SelectionWidget
 from widgets.plotWidget import PlotWidget
+import shutil
 
 
 class MainWidget(QtWidgets.QWidget):
@@ -34,6 +35,7 @@ class MainWidget(QtWidgets.QWidget):
         self.updatePlotData.connect(self.plotWidget.updateData)
         self.selectionWidget.checkboxChanged.connect(self.plotWidget.updateSelection)
         self.selectionWidget.plotSelection.currentIndexChanged.connect(self.plotWidget.plotSelector)
+        self.selectionWidget.doMerge.connect(self.fileWidget.mergeResults)
 
 
     @Slot()
@@ -45,5 +47,6 @@ class MainWidget(QtWidgets.QWidget):
         print('Application closed.')
         if os.path.isfile("data/lastResults.p"):
             currentDate = datetime.datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
-            os.rename(r"data/lastResults.p", r"data/oldResults_" + currentDate + ".p")
+            shutil.copy2("data/lastResults.p", "data/archive/oldResults_" + currentDate + ".p")
+            # os.rename(r"data/lastResults.p", r"data/oldResults_" + currentDate + ".p")
             print('Files renamed.')

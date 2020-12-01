@@ -1,9 +1,10 @@
 import os
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
-from functions.dkbReader import sort_csvdata
+from functions.dkbReader import sort_csvdata, mergeFiles
 import datetime
 import pickle
+import shutil
 
 #TODO: Create merge function
 
@@ -110,3 +111,42 @@ class FileWidget(QtWidgets.QWidget):
                 currentDate = datetime.datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
                 os.rename(r"data/lastResults.p", r"data/oldResults_" + currentDate + ".p")
             pickle.dump(results, open("data/lastResults.p", "wb"))
+
+
+    @Slot()
+    def mergeResults(self, selection):
+        # assemble selected results
+        selectRes = self.results
+        for year in list(selection.keys()):
+            b_any = False
+            for month in list(selection[year].keys()):
+                if not selection[year][month]:
+                    selectRes[int(year)].pop(month, None)
+                elif not b_any:
+                    b_any = True
+            if not b_any:
+                selectRes.pop(int(year), None)
+
+        if not selectRes:  # all elements were purged
+            return
+
+        fileFound = False
+        try:
+            allData = pickle.load(open('data/_AllResults.p', 'rb'))
+            fileFound = True
+        except:
+            pass
+
+        if fileFound:
+            newAllData = mergeFiles(allData, selectRes)
+            currentDate = datetime.datetime.today().strftime('%Y-%m-%d_%H-%M-%S')
+            shutil.copy2("data/_AllResults.p", "data/archive/_oldAllResults_" + currentDate + ".p")
+            print('Results successfully merged')
+        else:
+            newAllData = selectRes
+            print('New overall file created')
+
+        pickle.dump(newAllData, open('data/_AllResults.p', 'wb'))
+        print('Results successfully saved')
+
+

@@ -288,9 +288,89 @@ def getDateFromBch(bch):
     datestr = str(tag) + ". " + monat + " " + str(jahr)
     return [jahr, monat, datestr]
 
+
 def getCategories():
     categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Handy',
                     'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung',
                     'Post', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
     return categoryList
 
+
+def mergeFiles(mainRes, newRes):
+    # brute force: each element in newRes (if months overlap) is compared to all elements of the same month in mainRes
+    for year in list(newRes.keys()):
+        if year not in mainRes:
+            mainRes[year] = newRes[year]
+            continue
+        for month in list(newRes[year].keys()):
+            if month not in mainRes[year]:
+                mainRes[year][month] = newRes[year][month]
+            # months overlap - start comparing
+            for cat in list(newRes[year][month].keys()):
+                if 'sum' in newRes[year][month][cat]:  # no subcategories
+                    if cat not in mainRes[year][month]:
+                        mainRes[year][month][cat] = {'sum': 0, 'bch': []}
+                    currentBch = newRes[year][month][cat]['bch']
+                    if not currentBch == mainRes[year][month][cat]['bch']:
+                        retVal = searchBch(currentBch, mainRes[year][month], cat, None)
+                        if retVal is not None:
+                            mainRes[year][month] = retVal
+                else:  # subcategories
+                    if cat not in mainRes[year][month]:
+                        mainRes[year][month][cat] = {}
+                    for catIdent in list(newRes[year][month][cat].keys()):
+                        if catIdent not in mainRes[year][month][cat]:
+                            mainRes[year][month][cat][catIdent] = {'sum': 0, 'bch': []}
+                        currentBch = newRes[year][month][cat][catIdent]['bch']
+                        if not currentBch == mainRes[year][month][cat][catIdent]['bch']:
+                            retVal = searchBch(currentBch, mainRes[year][month], cat, catIdent)
+                            if retVal is not None:
+                                mainRes[year][month] = retVal
+    return mainRes
+
+
+def searchBch(currentBch, compMonth, cat, catIdent):
+    anyDiff = False
+    for bch in currentBch:
+        indicesFound = []
+        for chkCat in list(compMonth.keys()):
+            if 'sum' in compMonth[chkCat]:
+                for idx, chkBch in enumerate(compMonth[chkCat]['bch']):
+                    if bch == chkBch:
+                        indicesFound.append([chkCat, None, idx])
+            else:
+                for chkCatIdent in list(compMonth[chkCat].keys()):
+                    for idx, chkBch in enumerate(compMonth[chkCat][chkCatIdent]['bch']):
+                        if bch == chkBch:
+                            indicesFound.append([chkCat, chkCatIdent, idx])
+        if len(indicesFound) == 1 and indicesFound[0][0] == cat and indicesFound[0][1] == catIdent:
+            continue
+        elif not anyDiff:
+            anyDiff = True
+
+        betrag = float(bch["Betrag"].replace('.', '').replace(',', '.'))
+        if betrag < 0:
+            betrag *= -1
+
+        for itm in indicesFound:  # pop potential old entries
+            if itm[1] is None:
+                compMonth[itm[0]]['bch'].pop(itm[2])
+                compMonth[itm[0]]['sum'] -= betrag
+            else:
+                compMonth[itm[0]][itm[1]]['bch'].pop(itm[2])
+                compMonth[itm[0]][itm[1]]['sum'] -= betrag
+
+        if catIdent is None:
+            compMonth[cat]['bch'].append(bch)
+            compMonth[cat]['sum'] += betrag
+        else:
+            if catIdent in compMonth[cat]:
+                compMonth[cat][catIdent]['bch'].append(bch)
+                compMonth[cat][catIdent]['sum'] += betrag
+            else:
+                compMonth[cat][catIdent] = {'sum': betrag, 'bch': bch}
+
+    if anyDiff:
+        return compMonth
+    else:
+        return None

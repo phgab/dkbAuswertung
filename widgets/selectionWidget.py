@@ -4,6 +4,7 @@ from PySide2.QtCore import Signal, Slot
 class SelectionWidget(QtWidgets.QWidget):
     checkboxChanged = Signal(dict)
     treeUpdated = Signal()
+    doMerge = Signal(dict)
 
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
@@ -31,6 +32,7 @@ class SelectionWidget(QtWidgets.QWidget):
 
         ## SIGNALS / SLOTS
         mainTree.itemChanged.connect(self.childCheckChanged)
+        self.mergeButton.clicked.connect(self.initiateMerge)
 
         ## LAYOUT ##
         # Do I Really need to do this?!
@@ -66,7 +68,8 @@ class SelectionWidget(QtWidgets.QWidget):
                 if year not in newSelect:
                     continue
                 for month in list(self.selection[year].keys()):
-                    if month in newSelect[year] and newSelect[year][month] == self.selection[year][month]:
+                    if month not in newSelect[year] or \
+                            month in newSelect[year] and newSelect[year][month] == self.selection[year][month]:
                         continue
                     else:
                         newSelect[year][month] = self.selection[year][month]
@@ -154,3 +157,8 @@ class SelectionWidget(QtWidgets.QWidget):
         for num, month in enumerate(order):
             if str == month:
                 return num
+
+
+    @Slot()
+    def initiateMerge(self):
+        self.doMerge.emit(self.selection)
