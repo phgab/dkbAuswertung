@@ -23,6 +23,8 @@ class FileWidget(QtWidgets.QWidget):
         self.resultsButton.setMaximumWidth(250)
         self.loadResultsButton = QtWidgets.QPushButton("Auswertung laden")
         self.loadResultsButton.setMaximumWidth(250)
+        self.addEntriesButton = QtWidgets.QPushButton("Manuell hinzufügen")
+        self.addEntriesButton.setMaximumWidth(250)
         self.pathText = QtWidgets.QTextEdit("")
         self.pathText.setReadOnly(True)
         self.pathText.setFixedHeight(self.pathText.size().height() / 8)
@@ -41,6 +43,7 @@ class FileWidget(QtWidgets.QWidget):
         gridLayout.addWidget(self.resultsButton, 2, 1, 1, 3)
         gridLayout.addWidget(self.orLabel, 3, 0, 1, 4)
         gridLayout.addWidget(self.loadResultsButton, 4, 1, 1, 3)
+        gridLayout.addWidget(self.addEntriesButton, 6, 1, 1, 3)
 
         self.setLayout(gridLayout)
 

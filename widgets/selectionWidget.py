@@ -30,6 +30,10 @@ class SelectionWidget(QtWidgets.QWidget):
         self.plotSelection.setMaximumWidth(300)
         self.plotSelection.setVisible(False)
 
+        self.legendSelection = QtWidgets.QComboBox()
+        self.legendSelection.setMaximumWidth(300)
+        self.legendSelection.setVisible(True)
+
         ## SIGNALS / SLOTS
         mainTree.itemChanged.connect(self.childCheckChanged)
         self.mergeButton.clicked.connect(self.initiateMerge)
@@ -40,6 +44,7 @@ class SelectionWidget(QtWidgets.QWidget):
         treeLayout.addWidget(self.mergeButton)
         treeLayout.addWidget(mainTree)
         treeLayout.addWidget(self.plotSelection)
+        treeLayout.addWidget(self.legendSelection)
         self.setLayout(treeLayout)
 
 
