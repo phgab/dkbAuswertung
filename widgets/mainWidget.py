@@ -36,6 +36,8 @@ class MainWidget(QtWidgets.QWidget):
         self.selectionWidget.checkboxChanged.connect(self.plotWidget.updateSelection)
         self.selectionWidget.plotSelection.currentIndexChanged.connect(self.plotWidget.plotSelector)
         self.selectionWidget.doMerge.connect(self.fileWidget.mergeResults)
+        self.plotWidget.sgn_updateLegendSelection.connect(self.selectionWidget.updateLegendSelCont)
+        self.selectionWidget.legendSelection.currentTextChanged.connect(self.plotWidget.legendSelector)
 
 
     @Slot()

@@ -31,12 +31,13 @@ class SelectionWidget(QtWidgets.QWidget):
         self.plotSelection.setVisible(False)
 
         self.legendSelection = QtWidgets.QComboBox()
-        self.legendSelection.setMaximumWidth(300)
-        self.legendSelection.setVisible(True)
+        self.legendSelection.setMaximumWidth(200)
+        self.legendSelection.setVisible(False)
 
         ## SIGNALS / SLOTS
         mainTree.itemChanged.connect(self.childCheckChanged)
         self.mergeButton.clicked.connect(self.initiateMerge)
+        self.plotSelection.currentIndexChanged.connect(self.plotSelChanged)
 
         ## LAYOUT ##
         # Do I Really need to do this?!
@@ -110,10 +111,15 @@ class SelectionWidget(QtWidgets.QWidget):
             if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                 self.mergeButton.setVisible(True)
                 self.plotSelection.setVisible(True)
+                if self.plotSelection.currentIndex() == 0:
+                    self.legendSelection.setVisible(True)
+                else:
+                    self.legendSelection.setVisible(False)
         else:
             if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                 self.mergeButton.setVisible(False)
                 self.plotSelection.setVisible(False)
+                self.legendSelection.setVisible(False)
 
         self.treeUpdated.emit()
 
@@ -141,10 +147,12 @@ class SelectionWidget(QtWidgets.QWidget):
                 if not all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                     self.mergeButton.setVisible(True)
                     self.plotSelection.setVisible(True)
+                    self.legendSelection.setVisible(True)
             else:
                 if all([self.selection[year][mon] == 0 for year in self.selection for mon in self.selection[year]]):
                     self.mergeButton.setVisible(False)
                     self.plotSelection.setVisible(False)
+                    self.legendSelection.setVisible(False)
 
             if not parent.checkState(0) == QtCore.Qt.CheckState.PartiallyChecked:
                 state = item.checkState(0)
@@ -167,3 +175,20 @@ class SelectionWidget(QtWidgets.QWidget):
     @Slot()
     def initiateMerge(self):
         self.doMerge.emit(self.selection)
+
+
+    @Slot()
+    def updateLegendSelCont(self, catList):
+        self.legendSelection.blockSignals(True)
+        self.legendSelection.clear()
+        for cat in catList:
+            self.legendSelection.addItem(cat)
+        self.legendSelection.blockSignals(False)
+
+
+    @Slot()
+    def plotSelChanged(self, plotNr):
+        if plotNr == 0 and self.plotSelection.isVisible():
+            self.legendSelection.setVisible(True)
+        else:
+            self.legendSelection.setVisible(False)

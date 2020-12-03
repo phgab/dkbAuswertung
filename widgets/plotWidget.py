@@ -6,11 +6,13 @@ from PySide2.QtGui import QPainter, QFont
 from PySide2.QtWidgets import QSizePolicy
 from PySide2.QtCharts import QtCharts
 import pickle
+import math
 
 
 class PlotWidget(QtCharts.QChartView):
     sgn_redrawPlot = Signal()
     sgn_updatePlot = Signal()
+    sgn_updateLegendSelection = Signal(list)
 
     def __init__(self, parent=None):
         QtCharts.QChartView.__init__(self, parent)
@@ -18,9 +20,11 @@ class PlotWidget(QtCharts.QChartView):
         self.selection = None
         self.plotData = None
         self.plotDataTags = None
+        self.catList = None
         self.sumData = None
         self.barSets = None
         self.currentPlot = 0
+        self.currentLegendPlot = None
 
         self.setMinimumWidth(600)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
@@ -45,6 +49,12 @@ class PlotWidget(QtCharts.QChartView):
     @Slot()
     def plotSelector(self, plotNr):
         self.currentPlot = plotNr
+        self.redrawPlot()
+        # print('Plot no. ' + str(plotNr) + ' selected.')
+
+    @Slot()
+    def legendSelector(self, legendText):
+        self.currentLegendPlot = legendText
         self.redrawPlot()
         # print('Plot no. ' + str(plotNr) + ' selected.')
 
@@ -118,26 +128,42 @@ class PlotWidget(QtCharts.QChartView):
             return
 
         if self.currentPlot == 0:
-            self.plotAllExpenseBars()
+            if self.currentLegendPlot is None or self.currentLegendPlot == 'Alle':
+                self.plotAllExpenseBars()
+            else:
+                self.plotAllExpenseBars(self.currentLegendPlot)
         elif self.currentPlot == 1:
+            self.currentLegendPlot = None
             self.plotSavingsBars()
         else:
             print('Invalid plot no. selected - nothing is drawn')
 
 
-    def plotAllExpenseBars(self):
+    def plotAllExpenseBars(self, legendPlot=None):
         chart = QtCharts.QChart()
 
         barSets = []
         barSeries = QtCharts.QBarSeries()
-        for cat in list(self.plotData.keys()):
-            if cat == "Einnahmen":
-                continue
-            barSet = QtCharts.QBarSet(cat)
-            barSet.append(self.plotData[cat])
+        maxVal = 0
+        if legendPlot is None:
+            catList = ['Alle']
+            for cat in list(self.plotData.keys()):
+                if cat == "Einnahmen":
+                    continue
+                barSet = QtCharts.QBarSet(cat)
+                barSet.append(self.plotData[cat])
+                barSets.append(barSet)
+                barSeries.append(barSet)
+                catList.append(cat)
+                maxVal = max(maxVal, max(self.plotData[cat]))
+            self.barSets = barSets
+            self.catList = catList
+        else:
+            barSet = QtCharts.QBarSet(legendPlot)
+            barSet.append(self.plotData[legendPlot])
             barSets.append(barSet)
             barSeries.append(barSet)
-        self.barSets = barSets
+            maxVal = max(self.plotData[legendPlot])
 
         chart.addSeries(barSeries)
 
@@ -145,7 +171,10 @@ class PlotWidget(QtCharts.QChartView):
         titleFont.setPointSize(16)
         titleFont.setBold(True)
         chart.setTitleFont(titleFont)
-        chart.setTitle("Ausgaben")
+        if legendPlot is None:
+            chart.setTitle("Ausgaben")
+        else:
+            chart.setTitle("Ausgaben: " + legendPlot)
 
         axisX = QtCharts.QBarCategoryAxis()
         axisX.append(self.plotDataTags)
@@ -155,16 +184,21 @@ class PlotWidget(QtCharts.QChartView):
         axisY = QtCharts.QValueAxis()
         axisY.setLabelFormat("%i")
         axisY.setTitleText("€")
-        axisY.applyNiceNumbers()
+        self.setYRange(maxVal, axisY)
         # chart.setAxisY(axisY, lineSeries)
         chart.setAxisY(axisY, barSeries)
         # axisY.setRange(0, 20)
 
-        chart.legend().setVisible(True)
-        chart.legend().setAlignment(Qt.AlignRight)
+        if legendPlot is None:
+            chart.legend().setVisible(True)
+            chart.legend().setAlignment(Qt.AlignRight)
+        else:
+            chart.legend().setVisible(False)
 
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)
+        if legendPlot is None:
+            self.sgn_updateLegendSelection.emit(self.catList)
         # draw the plot from scratch (if that makes a difference)
         print('Expense bar plot drawn')
 
@@ -172,17 +206,25 @@ class PlotWidget(QtCharts.QChartView):
         chart = QtCharts.QChart()
 
         # barSets = []
+        maxVal = 0
+        minVal = 0
         barSeries = QtCharts.QBarSeries()
         expSet = QtCharts.QBarSet('Ausgaben')
         expSet.append(self.sumData['exp'])
+        maxVal = max(maxVal, max(self.sumData['exp']))
+        minVal = min(minVal, min(self.sumData['exp']))
         barSeries.append(expSet)
 
         incSet = QtCharts.QBarSet('Einnahmen')
         incSet.append(self.sumData['inc'])
+        maxVal = max(maxVal, max(self.sumData['inc']))
+        minVal = min(minVal, min(self.sumData['inc']))
         barSeries.append(incSet)
 
         savSet = QtCharts.QBarSet('Rücklagen')
         savSet.append(self.sumData['sav'])
+        maxVal = max(maxVal, max(self.sumData['sav']))
+        minVal = min(minVal, min(self.sumData['sav']))
         barSeries.append(savSet)
 
         # self.barSets = barSets
@@ -203,7 +245,10 @@ class PlotWidget(QtCharts.QChartView):
         axisY = QtCharts.QValueAxis()
         axisY.setLabelFormat("%i")
         axisY.setTitleText("€")
-        axisY.applyNiceNumbers()
+        if minVal < 0:
+            self.setYRange(maxVal, axisY, minVal)
+        else:
+            self.setYRange(maxVal, axisY)
         # chart.setAxisY(axisY, lineSeries)
         chart.setAxisY(axisY, barSeries)
         # axisY.setRange(0, 20)
@@ -221,6 +266,37 @@ class PlotWidget(QtCharts.QChartView):
     def updatePlot(self):
         #only change plot parameters, not the underlying data
         test=1
+
+
+    def setYRange(self, maxY, axisY: QtCharts.QValueAxis(), minY=None):
+        if maxY <= 60:
+            divider = 10
+        elif maxY <= 200:
+            divider = 50
+        elif maxY <= 600:
+            divider = 100
+        elif maxY <= 2000:
+            divider = 500
+        elif maxY <= 6000:
+            divider = 1000
+        elif maxY <= 20000:
+            divider = 5000
+
+        axisY.applyNiceNumbers()
+
+        rangeLim = math.ceil(maxY / divider) * divider
+        if minY is None:
+            axisY.setRange(0, rangeLim)
+        else:
+            rangeMin = math.floor(minY / divider) * divider
+            axisY.setRange(rangeMin, rangeLim)
+
+        if minY is None:
+            numTicks = math.ceil(maxY / divider) + 1
+        else:
+            numTicks = math.ceil(maxY / divider) + 1 - math.floor(minY / divider)
+        axisY.setTickCount(numTicks)
+
 
 
     def findCategories(self, results):
