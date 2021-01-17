@@ -164,7 +164,7 @@ def findCat(window, displayText, miscList):
     while True:
         catText = 'Zur folgenden Buchung wurde keine Kategorie gefunden:\n' + \
             displayText + '\nIn welche Kategorie passt die Buchung?'
-        categories = getCategories()
+        categories = getCatSpe()
         suggestList = pickle.load(open("data/suggestList.p", "rb"))
         suggestFound = False
         startIdx = 0
@@ -231,8 +231,7 @@ def findCat(window, displayText, miscList):
 def findIncome(window, displayText):
     while True:
         catText = 'Zu welcher Kategorie gehören folgende Einnahmen:\n' + displayText
-        incomeOptions = ['Gehalt Georg', 'Gehalt Franzi', 'BAFöG', 'Erstattung Versicherung',
-                         'Unterhalt', ignoreText]
+        incomeOptions = getCatInc()
 
         suggestList = pickle.load(open("data/suggestList.p", "rb"))
         startIdx = 0
@@ -289,10 +288,16 @@ def getDateFromBch(bch):
     return [jahr, monat, datestr]
 
 
-def getCategories():
+def getCatSpe():
     categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Handy',
                     'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung',
                     'Post', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
+    return categoryList
+
+
+def getCatInc():
+    categoryList = ['Gehalt Georg', 'Gehalt Franzi', 'BAFöG', 'Erstattung Versicherung',
+                    'Unterhalt', ignoreText]
     return categoryList
 
 

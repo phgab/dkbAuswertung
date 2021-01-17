@@ -1,7 +1,8 @@
 import os
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
-from functions.dkbReader import sort_csvdata, mergeFiles
+from functions.dkbReader import sort_csvdata, mergeFiles, addToResults
+from widgets.manualEntryDialog import ManualEntryDialog
 import datetime
 import pickle
 import shutil
@@ -53,6 +54,7 @@ class FileWidget(QtWidgets.QWidget):
         self.resultsButton.clicked.connect(self.call_dkb_reader)
         self.loadResultsButton.clicked.connect(self.loadResults)
         self.pathChanged.connect(self.pathText.setText)
+        self.addEntriesButton.clicked.connect(self.manuallyAdd)
 
     @Slot()
     def find_csv_file(self):
@@ -158,5 +160,51 @@ class FileWidget(QtWidgets.QWidget):
 
     @Slot()
     def manuallyAdd(self):
-        test=1
+        resultsUpdated = False
+        while(True):
+            # do dialog
+            dialogData = ManualEntryDialog.doManualEntry()
+            if not dialogData['result']:
+                break
+            monthlist = ['',
+                         'Januar', 'Februar', 'März', 'April',
+                         'Mai', 'Juni', 'Juli', 'August',
+                         'September', 'Oktober', 'November', 'Dezember']
 
+            # sort data
+            month = monthlist[dialogData['date'][1]]
+            incSpe = dialogData['incSpe']
+            if incSpe == 'Ausgaben' or incSpe == 'Einnahmen':
+                bch = {
+                    'Buchung_Tag': dialogData['date'][2],
+                    'Buchung_Monat': dialogData['date'][1],
+                    'Buchung_Jahr': dialogData['date'][0],
+                    'Verwendungszweck': dialogData['descr'],
+                    'Buchungstext': 'Manuell'
+                }
+                if incSpe == 'Ausgaben':
+                    bch['Betrag'] = str(-dialogData['amt'])
+                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month, dialogData['cat'], dialogData['catIdent'])
+                elif incSpe == 'Einnahmen':
+                    bch['Betrag'] = str(-dialogData['amt'])
+                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month, 'Einnahmen', dialogData['cat'])
+
+            resultsUpdated = True
+
+            # ask for repetition
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Question)
+
+            msg.setText("Sollen weitere Einträge hinzugefügt werden?")
+            msg.setWindowTitle("DKB Auswertung")
+            yesButton = msg.addButton('Ja', QtWidgets.QMessageBox.YesRole)
+            msg.addButton('Nein', QtWidgets.QMessageBox.NoRole)
+            msg.setDefaultButton(yesButton)
+
+            retval = msg.exec_()
+
+            if retval != 0:
+                break
+        if resultsUpdated:
+            self.saveResults(self.results)
+            self.updateTree.emit(self.results)
