@@ -22,11 +22,11 @@ exe = EXE(pyz,
           [],
           exclude_binaries=True,
           name='main',
-          debug=True,
+          debug=False,
           bootloader_ignore_signals=False,
           strip=False,
           upx=True,
-          console=True )
+          console=False )
 coll = COLLECT(exe,
                a.binaries,
                a.zipfiles,

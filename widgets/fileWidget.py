@@ -25,6 +25,7 @@ class FileWidget(QtWidgets.QWidget):
         self.loadResultsButton.setMaximumWidth(250)
         self.addEntriesButton = QtWidgets.QPushButton("Daten Manuell hinzufügen")
         self.addEntriesButton.setMaximumWidth(250)
+        self.addEntriesButton.setVisible(False)
         self.pathText = QtWidgets.QTextEdit("")
         self.pathText.setReadOnly(True)
         self.pathText.setFixedHeight(self.pathText.size().height() / 8)
@@ -43,7 +44,7 @@ class FileWidget(QtWidgets.QWidget):
         gridLayout.addWidget(self.resultsButton, 2, 1, 1, 3)
         gridLayout.addWidget(self.orLabel, 3, 0, 1, 4)
         gridLayout.addWidget(self.loadResultsButton, 4, 1, 1, 3)
-        gridLayout.addWidget(self.addEntriesButton, 6, 1, 1, 3)
+        gridLayout.addWidget(self.addEntriesButton, 5, 1, 1, 3)
 
         self.setLayout(gridLayout)
 
@@ -65,6 +66,7 @@ class FileWidget(QtWidgets.QWidget):
     def call_dkb_reader(self):
         self.results = sort_csvdata(self)
         self.saveResults(self.results)
+        self.addEntriesButton.setVisible(True)
         self.updateTree.emit(self.results)
 
     @Slot()
@@ -83,6 +85,7 @@ class FileWidget(QtWidgets.QWidget):
             results = pickle.load(open(fileName, "rb"))
             self.results = results
             print("Succesfully loaded: " + fileName)
+            self.addEntriesButton.setVisible(True)
             self.updateTree.emit(self.results)
         except:
             msg = QtWidgets.QMessageBox()
@@ -152,4 +155,8 @@ class FileWidget(QtWidgets.QWidget):
         pickle.dump(newAllData, open('data/_AllResults.p', 'wb'))
         print('Results successfully saved')
 
+
+    @Slot()
+    def manuallyAdd(self):
+        test=1
 
