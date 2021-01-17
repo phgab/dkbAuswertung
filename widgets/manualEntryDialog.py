@@ -31,6 +31,9 @@ class ManualEntryDialog(QtWidgets.QDialog):
         self.income = QtWidgets.QCheckBox('Einnahmen')
         self.incSpeBoxGrp.addButton(self.income, 1)
         self.miniLayout.addWidget(self.income)
+        self.meter = QtWidgets.QCheckBox('Zählerstand')
+        self.incSpeBoxGrp.addButton(self.meter, 2)
+        self.miniLayout.addWidget(self.meter)
         layout.addWidget(self.incSpeWidget)
 
         # Item name
@@ -100,6 +103,8 @@ class ManualEntryDialog(QtWidgets.QDialog):
             choices = getCatInc()
             choices.pop(-1)
             self.catChoices = choices
+        elif checkedID == 2:
+            self.catChoices = ['Strom', 'Gas', 'Wasser']
         else:
             self.catChoices = []
         # add categories
