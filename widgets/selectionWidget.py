@@ -24,7 +24,7 @@ class SelectionWidget(QtWidgets.QWidget):
         self.mergeButton.setVisible(False)
 
         self.plotSelection = QtWidgets.QComboBox()
-        self.plotChoices = ['Ausgaben: Kategorien', 'Rücklagen', 'Ausgaben vs. Einnahmen', 'Ausgaben: Sonstiges']
+        self.plotChoices = ['Ausgaben: Kategorien', 'Rücklagen', 'Ausgaben vs. Einnahmen', 'Ausgaben: Sonstiges', 'Zählerstände']
         for plot in self.plotChoices:
             self.plotSelection.addItem(plot)
         self.plotSelection.setMaximumWidth(300)

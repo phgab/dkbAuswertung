@@ -27,6 +27,9 @@ class FileWidget(QtWidgets.QWidget):
         self.addEntriesButton = QtWidgets.QPushButton("Daten Manuell hinzufügen")
         self.addEntriesButton.setMaximumWidth(250)
         self.addEntriesButton.setVisible(False)
+        self.meterButton = QtWidgets.QPushButton("Zählerstand hinzufügen")
+        self.meterButton.setMaximumWidth(250)
+        self.meterButton.setVisible(False)
         self.pathText = QtWidgets.QTextEdit("")
         self.pathText.setReadOnly(True)
         self.pathText.setFixedHeight(self.pathText.size().height() / 8)
@@ -55,6 +58,8 @@ class FileWidget(QtWidgets.QWidget):
         self.loadResultsButton.clicked.connect(self.loadResults)
         self.pathChanged.connect(self.pathText.setText)
         self.addEntriesButton.clicked.connect(self.manuallyAdd)
+        self.meterButton.clicked.connect(self.addMeter)
+
 
     @Slot()
     def find_csv_file(self):
@@ -69,6 +74,7 @@ class FileWidget(QtWidgets.QWidget):
         self.results = sort_csvdata(self)
         self.saveResults(self.results)
         self.addEntriesButton.setVisible(True)
+        self.meterButton.setVisible(True)
         self.updateTree.emit(self.results)
 
     @Slot()
@@ -88,6 +94,7 @@ class FileWidget(QtWidgets.QWidget):
             self.results = results
             print("Succesfully loaded: " + fileName)
             self.addEntriesButton.setVisible(True)
+            self.meterButton.setVisible(True)
             self.updateTree.emit(self.results)
         except:
             msg = QtWidgets.QMessageBox()
@@ -208,3 +215,59 @@ class FileWidget(QtWidgets.QWidget):
         if resultsUpdated:
             self.saveResults(self.results)
             self.updateTree.emit(self.results)
+
+    @Slot()
+    def addMeter(self):
+        #TODO: CHANGE EVERYTHING
+        resultsUpdated = False
+        while (True):
+            # do dialog
+            dialogData = ManualEntryDialog.doManualEntry()
+            if not dialogData['result']:
+                break
+            monthlist = ['',
+                         'Januar', 'Februar', 'März', 'April',
+                         'Mai', 'Juni', 'Juli', 'August',
+                         'September', 'Oktober', 'November', 'Dezember']
+
+            # sort data
+            month = monthlist[dialogData['date'][1]]
+            incSpe = dialogData['incSpe']
+            if incSpe == 'Ausgaben' or incSpe == 'Einnahmen':
+                bch = {
+                    'Buchung_Tag': dialogData['date'][2],
+                    'Buchung_Monat': dialogData['date'][1],
+                    'Buchung_Jahr': dialogData['date'][0],
+                    'Verwendungszweck': dialogData['descr'],
+                    'Buchungstext': 'Manuell'
+                }
+                if incSpe == 'Ausgaben':
+                    bch['Betrag'] = str(-dialogData['amt'])
+                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month,
+                                                dialogData['cat'], dialogData['catIdent'])
+                elif incSpe == 'Einnahmen':
+                    bch['Betrag'] = str(-dialogData['amt'])
+                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month,
+                                                'Einnahmen', dialogData['cat'])
+
+            resultsUpdated = True
+
+            # ask for repetition
+            msg = QtWidgets.QMessageBox()
+            msg.setIcon(QtWidgets.QMessageBox.Question)
+
+            msg.setText("Sollen weitere Einträge hinzugefügt werden?")
+            msg.setWindowTitle("DKB Auswertung")
+            yesButton = msg.addButton('Ja', QtWidgets.QMessageBox.YesRole)
+            msg.addButton('Nein', QtWidgets.QMessageBox.NoRole)
+            msg.setDefaultButton(yesButton)
+
+            retval = msg.exec_()
+
+            if retval != 0:
+                break
+        if resultsUpdated:
+            self.saveResults(self.results)
+            self.updateTree.emit(self.results)
+
+

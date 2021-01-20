@@ -80,13 +80,15 @@ class PlotWidget(QtCharts.QChartView):
             self.setVisible(True)
 
         catList = self.findCategories(self.results)
-        newData = {cat:[] for cat in catList}
+        newData = {cat: [] for cat in catList}
         dataTags = []
         for year in list(self.selection.keys()):
             for month in list(self.selection[year].keys()):
                 if not self.selection[year][month]:
                     continue
                 for cat in catList:
+                    if cat == "Zählerstände":
+                        continue
                     if cat in self.results[int(year)][month]:
                         if 'sum' in self.results[int(year)][month][cat]:
                             newData[cat].append(self.results[int(year)][month][cat]['sum'])
@@ -103,6 +105,8 @@ class PlotWidget(QtCharts.QChartView):
             for cat in list(newData.keys()):
                 if cat == "Einnahmen":
                     newSumData['inc'][idx] += newData[cat][idx]
+                elif cat == "Zählerstände":
+                    continue
                 else:
                     newSumData['exp'][idx] += newData[cat][idx]
             if idx == 0:
@@ -148,7 +152,7 @@ class PlotWidget(QtCharts.QChartView):
         if legendPlot is None:
             catList = ['Alle']
             for cat in list(self.plotData.keys()):
-                if cat == "Einnahmen":
+                if cat == "Einnahmen" or cat == "Zählerstände":
                     continue
                 barSet = QtCharts.QBarSet(cat)
                 barSet.append(self.plotData[cat])
