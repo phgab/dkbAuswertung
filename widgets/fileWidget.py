@@ -218,7 +218,6 @@ class FileWidget(QtWidgets.QWidget):
 
     @Slot()
     def addMeter(self):
-        #TODO: CHANGE EVERYTHING
         resultsUpdated = False
         while (True):
             # do dialog
@@ -232,23 +231,15 @@ class FileWidget(QtWidgets.QWidget):
 
             # sort data
             month = monthlist[dialogData['date'][1]]
-            incSpe = dialogData['incSpe']
-            if incSpe == 'Ausgaben' or incSpe == 'Einnahmen':
-                bch = {
-                    'Buchung_Tag': dialogData['date'][2],
-                    'Buchung_Monat': dialogData['date'][1],
-                    'Buchung_Jahr': dialogData['date'][0],
-                    'Verwendungszweck': dialogData['descr'],
-                    'Buchungstext': 'Manuell'
-                }
-                if incSpe == 'Ausgaben':
-                    bch['Betrag'] = str(-dialogData['amt'])
-                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month,
-                                                dialogData['cat'], dialogData['catIdent'])
-                elif incSpe == 'Einnahmen':
-                    bch['Betrag'] = str(-dialogData['amt'])
-                    self.results = addToResults(self.results, bch, dialogData['amt'], dialogData['date'][0], month,
-                                                'Einnahmen', dialogData['cat'])
+            meterType = dialogData['meterType']
+            bch = {
+                'Ablesung_Tag': dialogData['date'][2],
+                'Ablesung_Monat': dialogData['date'][1],
+                'Ablesung_Jahr': dialogData['date'][0],
+                'Zählerstand': dialogData['level']
+            }
+            self.results = addToResults(self.results, bch, dialogData['level'], dialogData['date'][0], month,
+                                        'Zählerstände', dialogData['meterType'])
 
             resultsUpdated = True
 
