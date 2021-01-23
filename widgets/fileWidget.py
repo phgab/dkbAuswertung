@@ -3,6 +3,7 @@ from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
 from functions.dkbReader import sort_csvdata, mergeFiles, addToResults
 from widgets.manualEntryDialog import ManualEntryDialog
+from widgets.meterDialog import MeterDialog
 import datetime
 import pickle
 import shutil
@@ -49,6 +50,7 @@ class FileWidget(QtWidgets.QWidget):
         gridLayout.addWidget(self.orLabel, 3, 0, 1, 4)
         gridLayout.addWidget(self.loadResultsButton, 4, 1, 1, 3)
         gridLayout.addWidget(self.addEntriesButton, 5, 1, 1, 3)
+        gridLayout.addWidget(self.meterButton, 6, 1, 1, 3)
 
         self.setLayout(gridLayout)
 
@@ -221,7 +223,7 @@ class FileWidget(QtWidgets.QWidget):
         resultsUpdated = False
         while (True):
             # do dialog
-            dialogData = ManualEntryDialog.doManualEntry()
+            dialogData = MeterDialog.doMeter()
             if not dialogData['result']:
                 break
             monthlist = ['',

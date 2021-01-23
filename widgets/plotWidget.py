@@ -1,7 +1,7 @@
 import os
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
-from PySide2.QtCore import QPoint, Qt
+from PySide2.QtCore import QPoint, Qt, QDateTime, QDate
 from PySide2.QtGui import QPainter, QFont
 from PySide2.QtWidgets import QSizePolicy
 from PySide2.QtCharts import QtCharts
@@ -19,8 +19,10 @@ class PlotWidget(QtCharts.QChartView):
         self.results = None
         self.selection = None
         self.plotData = None
+        self.meterData = None
         self.plotDataTags = None
         self.catList = None
+        self.meterList = None
         self.sumData = None
         self.barSets = None
         self.currentPlot = 0
@@ -49,6 +51,7 @@ class PlotWidget(QtCharts.QChartView):
     @Slot()
     def plotSelector(self, plotNr):
         self.currentPlot = plotNr
+        self.currentLegendPlot = None
         self.redrawPlot()
         # print('Plot no. ' + str(plotNr) + ' selected.')
 
@@ -88,8 +91,19 @@ class PlotWidget(QtCharts.QChartView):
                     continue
                 for cat in catList:
                     if cat == "Zählerstände":
-                        continue
-                    if cat in self.results[int(year)][month]:
+                        if cat in self.results[int(year)][month]:
+                            # first encounter
+                            if not newData[cat]:
+                                newData[cat] = {}
+                            for meterType in list(self.results[int(year)][month][cat].keys()):
+                                if meterType not in newData[cat]:
+                                    newData[cat][meterType] = []
+                                for bch in self.results[int(year)][month][cat][meterType]["bch"]:
+                                    date = QDateTime()
+                                    date.setDate(QDate(bch['Ablesung_Jahr'], bch['Ablesung_Monat'], bch['Ablesung_Tag']))
+                                    level = bch['Zählerstand']
+                                    newData[cat][meterType].append({'level': level, 'date': date})
+                    elif cat in self.results[int(year)][month]:
                         if 'sum' in self.results[int(year)][month][cat]:
                             newData[cat].append(self.results[int(year)][month][cat]['sum'])
                         else:
@@ -139,6 +153,18 @@ class PlotWidget(QtCharts.QChartView):
         elif self.currentPlot == 1:
             self.currentLegendPlot = None
             self.plotSavingsBars()
+        elif self.currentPlot == 2:
+            if 'Zählerstände' in self.plotData.keys():
+                meterList = [meterType for meterType in self.plotData['Zählerstände'].keys()]
+                meterListChanged = False
+                if not self.meterList == meterList:
+                    self.meterList = meterList
+                    meterListChanged = True
+                if self.currentLegendPlot is None or meterListChanged:
+                    self.sgn_updateLegendSelection.emit(self.meterList)
+                    self.currentLegendPlot = meterList[0]
+                self.plotMeterAvg(self.currentLegendPlot)
+
         else:
             print('Invalid plot no. selected - nothing is drawn')
 
@@ -264,6 +290,10 @@ class PlotWidget(QtCharts.QChartView):
         self.setRenderHint(QPainter.Antialiasing)
         # draw the plot from scratch (if that makes a difference)
         print('Expense bar plot drawn')
+
+
+    def plotMeterAvg(self, legendSelection):
+        print(legendSelection)
 
 
     @Slot()

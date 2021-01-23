@@ -62,14 +62,14 @@ class MeterDialog(QtWidgets.QDialog):
     def mtrType(self):
         checkedID = self.meterTypeGrp.checkedId()
         if checkedID == 0:
-            meterTyoe = 'Strom'
+            meterType = 'Strom'
         elif checkedID == 1:
-            meterTyoe = 'Gas'
+            meterType = 'Gas'
         elif checkedID == 2:
-            meterTyoe = 'Wasser'
+            meterType = 'Wasser'
         else:
-            meterTyoe = '?'
-        return meterTyoe
+            meterType = '?'
+        return meterType
 
 
     # get level from spinBox
@@ -90,7 +90,7 @@ class MeterDialog(QtWidgets.QDialog):
         dialogData = {
             'date': [dateData.year(), dateData.month(), dateData.day()],
             'result': result == QtWidgets.QDialog.Accepted,
-            'meterTyoe': meterType,
+            'meterType': meterType,
             'level': level
         }
         return dialogData
