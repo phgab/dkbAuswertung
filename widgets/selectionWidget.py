@@ -24,7 +24,7 @@ class SelectionWidget(QtWidgets.QWidget):
         self.mergeButton.setVisible(False)
 
         self.plotSelection = QtWidgets.QComboBox()
-        self.plotChoices = ['Ausgaben: Kategorien', 'Rücklagen', 'Zählerstände']#, 'Ausgaben vs. Einnahmen', 'Ausgaben: Sonstiges']
+        self.plotChoices = ['Ausgaben: Kategorien', 'Rücklagen', 'Zählerstände', 'Verbrauch']#, 'Ausgaben vs. Einnahmen', 'Ausgaben: Sonstiges']
         for plot in self.plotChoices:
             self.plotSelection.addItem(plot)
         self.plotSelection.setMaximumWidth(300)
@@ -188,7 +188,7 @@ class SelectionWidget(QtWidgets.QWidget):
 
     @Slot()
     def plotSelChanged(self, plotNr):
-        if (plotNr == 0 or plotNr == 2) and self.plotSelection.isVisible():
+        if (plotNr == 0 or plotNr == 2 or plotNr == 3) and self.plotSelection.isVisible():
             self.legendSelection.setVisible(True)
         else:
             self.legendSelection.setVisible(False)

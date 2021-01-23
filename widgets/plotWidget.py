@@ -163,6 +163,20 @@ class PlotWidget(QtCharts.QChartView):
                 if self.currentLegendPlot is None or meterListChanged:
                     self.sgn_updateLegendSelection.emit(self.meterList)
                     self.currentLegendPlot = meterList[0]
+                self.plotMeterLvl(self.currentLegendPlot)
+        elif self.currentPlot == 3:
+            if 'Zählerstände' in self.plotData.keys():
+                meterList = []
+                for meterType in self.plotData['Zählerstände'].keys():
+                    meterList.append(meterType + ': Monatl.')
+                    meterList.append(meterType + ': Jährl.')
+                meterListChanged = False
+                if not self.meterList == meterList:
+                    self.meterList = meterList
+                    meterListChanged = True
+                if self.currentLegendPlot is None or meterListChanged:
+                    self.sgn_updateLegendSelection.emit(self.meterList)
+                    self.currentLegendPlot = meterList[0]
                 self.plotMeterAvg(self.currentLegendPlot)
 
         else:
@@ -289,11 +303,148 @@ class PlotWidget(QtCharts.QChartView):
         self.setChart(chart)
         self.setRenderHint(QPainter.Antialiasing)
         # draw the plot from scratch (if that makes a difference)
-        print('Expense bar plot drawn')
+        print('Savings bar plot drawn')
+
+
+    def plotMeterLvl(self, legendSelection):
+        chart = QtCharts.QChart()
+
+        lineSeries = QtCharts.QLineSeries()
+
+        for entry in self.plotData['Zählerstände'][legendSelection]:
+            lineSeries.append(entry['date'].toMSecsSinceEpoch(), entry['level'])
+
+        chart.addSeries(lineSeries)
+        titleFont = QFont("Sans Serif")
+        titleFont.setPointSize(16)
+        titleFont.setBold(True)
+
+        chart.setTitleFont(titleFont)
+        chart.setTitle("Zählerstände: " + legendSelection)
+
+        axisX = QtCharts.QDateTimeAxis()
+
+        tickCount = min([12, len(self.plotData['Zählerstände'][legendSelection])])
+        axisX.setTickCount(tickCount)
+        axisX.setFormat("MM/yy")
+        # axisX.setFormat("MMM yyyy")
+        axisX.setTitleText("Ablesedatum")
+
+        chart.setAxisX(axisX, lineSeries)
+        # chart.addAxis(axisX, Qt.AlignBottom)
+        # lineSeries.attachAxis(axisX)
+        # axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
+
+        axisY = QtCharts.QValueAxis()
+        axisY.setLabelFormat("%i")
+        if legendSelection == 'Strom':
+            axisY.setTitleText("Stromzählerstand [kWh]")
+        elif legendSelection == 'Gas':
+            axisY.setTitleText("Gaszählerstand [m<sup>3</sup>]")
+        elif legendSelection == 'Wasser':
+            axisY.setTitleText("Wasserzählerstand [m<sup>3</sup>]")
+        # if minVal < 0:
+        #     self.setYRange(maxVal, axisY, minVal)
+        # else:
+        #     self.setYRange(maxVal, axisY)
+
+        chart.setAxisY(axisY, lineSeries)
+        # chart.addAxis(axisY, Qt.AlignLeft)
+        # lineSeries.attachAxis(axisY)
+        # axisY.setRange(0, 20)
+
+        chart.legend().setVisible(False)
+        # chart.legend().setAlignment(Qt.AlignRight)
+
+        self.setChart(chart)
+        self.setRenderHint(QPainter.Antialiasing)
+        # draw the plot from scratch (if that makes a difference)
+        print('Meter bar plot drawn')
 
 
     def plotMeterAvg(self, legendSelection):
-        print(legendSelection)
+        origEndIdx = legendSelection.find(':')
+        category = legendSelection[0:origEndIdx]
+        yearly = legendSelection[origEndIdx+2:origEndIdx+3] == "J"
+        if len(self.plotData['Zählerstände'][category]) < 2:
+            return
+        avgLevelData = []
+        # compute average data
+        lastDate = None
+        lastLevel = None
+        for entry in self.plotData['Zählerstände'][category]:
+            date = entry['date']
+            level = entry['level']
+            if lastDate is None:
+                lastDate = date
+                lastLevel = level
+            else:
+                dayDiff = lastDate.daysTo(date)
+                if yearly:
+                    averageFactor = dayDiff / 365.25
+                else:
+                    averageFactor = dayDiff / 30.44
+                averageLevel = (level - lastLevel)/averageFactor
+                avgLevelData.append({'date': lastDate, 'level': averageLevel})
+                lastDate = date
+                lastLevel = level
+
+        chart = QtCharts.QChart()
+
+        lineSeries = QtCharts.QLineSeries()
+
+        for entry in avgLevelData:
+            lineSeries.append(entry['date'].toMSecsSinceEpoch(), entry['level'])
+
+        chart.addSeries(lineSeries)
+        titleFont = QFont("Sans Serif")
+        titleFont.setPointSize(16)
+        titleFont.setBold(True)
+
+        chart.setTitleFont(titleFont)
+        if yearly:
+            chart.setTitle("Jährlicher Verbrauch: " + category)
+        else:
+            chart.setTitle("Monatlicher Verbrauch: " + category)
+
+        axisX = QtCharts.QDateTimeAxis()
+
+        tickCount = min([12, len(avgLevelData)])
+        axisX.setTickCount(tickCount)
+        axisX.setFormat("MM/yy")
+        # axisX.setFormat("MMM yyyy")
+        axisX.setTitleText("Ablesedatum")
+
+        chart.setAxisX(axisX, lineSeries)
+        # chart.addAxis(axisX, Qt.AlignBottom)
+        # lineSeries.attachAxis(axisX)
+        # axisX.setRange(self.plotDataTags[0], self.plotDataTags[-1])
+
+        axisY = QtCharts.QValueAxis()
+        axisY.setLabelFormat("%i")
+        if category == 'Strom':
+            axisY.setTitleText("Stromverbrauch [kWh]")
+        elif category == 'Gas':
+            axisY.setTitleText("Gasverbrauch [m<sup>3</sup>]")
+        elif category == 'Wasser':
+            axisY.setTitleText("Wasserverbrauch [m<sup>3</sup>]")
+        # if minVal < 0:
+        #     self.setYRange(maxVal, axisY, minVal)
+        # else:
+        #     self.setYRange(maxVal, axisY)
+
+        chart.setAxisY(axisY, lineSeries)
+        # chart.addAxis(axisY, Qt.AlignLeft)
+        # lineSeries.attachAxis(axisY)
+        # axisY.setRange(0, 20)
+
+        chart.legend().setVisible(False)
+        # chart.legend().setAlignment(Qt.AlignRight)
+
+        self.setChart(chart)
+        self.setRenderHint(QPainter.Antialiasing)
+        # draw the plot from scratch (if that makes a difference)
+        print('Meter bar plot drawn')
 
 
     @Slot()
