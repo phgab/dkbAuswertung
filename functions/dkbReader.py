@@ -297,11 +297,11 @@ def getCatSpe():
 
 def getCatInc():
     categoryList = ['Gehalt Georg', 'Gehalt Franzi', 'BAFöG', 'Erstattung Versicherung',
-                    'Unterhalt', ignoreText]
+                    'Unterhalt', 'Sonstiges', ignoreText]
     return categoryList
 
 
-def mergeFiles(mainRes, newRes):
+def mergeFiles(mainRes, newRes): #TODO: REPAIR THIS SHIT
     # brute force: each element in newRes (if months overlap) is compared to all elements of the same month in mainRes
     for year in list(newRes.keys()):
         if year not in mainRes:
@@ -334,7 +334,7 @@ def mergeFiles(mainRes, newRes):
     return mainRes
 
 
-def searchBch(currentBch, compMonth, cat, catIdent):
+def searchBch(currentBch, compMonth, cat, catIdent): #TODO: REPAIR THIS SHIT
     anyDiff = False
     for bch in currentBch:
         indicesFound = []
