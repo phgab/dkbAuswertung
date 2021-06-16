@@ -289,7 +289,7 @@ def getDateFromBch(bch):
 
 
 def getCatSpe():
-    categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Handy',
+    categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Arzt', 'Handy',
                     'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung',
                     'Post', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
     return categoryList
