@@ -199,7 +199,7 @@ def findCat(window, displayText, miscList):
                     else:
                         identTextStart = 'Die eingegebene Zeichenfolge konnte im Buchungstext nicht gefunden werden! Bitte erneut eingeben\n'
                 else:
-                    break #TODO: INSERT ABORT DIALOG WITH RETURN OPTION HERE!
+                    break
             if ok and catIdent != "":
                 return [1, chosenCat, catIdent] # identifierDict ergänzen
             else:
@@ -213,14 +213,21 @@ def findCat(window, displayText, miscList):
                 startIdx = miscList.index(suggestCatIdent)
             else:
                 startIdx = 0
-            catIdent, ok = QInputDialog().getItem(window, "DKB Auswertung",
-                                                  identText, miscList, startIdx, True)
-            if ok and catIdent != "":
-                return [3, chosenCat, catIdent] # Beschreibenden Text auswerten
-            else:
-                abort = abortDialog()
-                if abort:
-                    return [-1, 0, 0]
+            while True:
+                catIdent, ok = QInputDialog().getItem(window, "DKB Auswertung",
+                                                      identText, miscList, startIdx, True)
+                if ok and catIdent != "":
+                    return [3, chosenCat, catIdent] # Beschreibenden Text auswerten
+                elif ok and catIdent == "":
+                    doNone = emptyMiscDescrDialog()
+                    if doNone:
+                        return [3, chosenCat, 'None']  # Beschreibenden Text auswerten
+                else:
+                    abort = abortDialog()
+                    if abort:
+                        return [-1, 0, 0]
+                    break
+
         elif ok and chosenCat == ignoreText:
             return [0, 0, 0]
         else:
@@ -257,13 +264,32 @@ def findIncome(window, displayText):
 
 
 def abortDialog():
+    msgText = "Soll die Auswertung abgebrochen werden?"
+    msgInfoText = "Keine Auswertung wird erstellt.\n" + \
+                  "Wenn dieses Fenster abgebrochen wird, wird der Dialog wiederholt."
+    msgTitle = "DKB Auswertung"
+    retval = yesNoDialog(msgText, msgInfoText, msgTitle)
+
+    return retval
+
+
+def emptyMiscDescrDialog():
+    msgText = "Soll keine Beschreibung eingetragen werden?"
+    msgInfoText = "As Beschreibung wird 'None' eingetragen.\n" + \
+                  "Wenn dieses Fenster abgebrochen wird, wird der Dialog wiederholt."
+    msgTitle = "DKB Auswertung"
+    retval = yesNoDialog(msgText, msgInfoText, msgTitle)
+
+    return retval
+
+
+def yesNoDialog(msgText, msgInfoText, msgTitle):
     msg = QMessageBox()
     msg.setIcon(QMessageBox.Warning)
 
-    msg.setText("Soll die Auswertung abgebrochen werden?")
-    msg.setInformativeText("Keine Auswertung wird erstellt.\n" +
-                           "Wenn dieses Fenster abgebrochen wird, wird der Dialog wiederholt.")
-    msg.setWindowTitle("DKB Auswertung")
+    msg.setText(msgText)
+    msg.setInformativeText(msgInfoText)
+    msg.setWindowTitle(msgTitle)
     yesButton = msg.addButton('Ja', QMessageBox.YesRole)
     msg.addButton('Nein', QMessageBox.NoRole)
     msg.setDefaultButton(yesButton)
@@ -274,7 +300,6 @@ def abortDialog():
         return True
     else:
         return False
-
 
 def getDateFromBch(bch):
     monthlist = ['',
@@ -290,7 +315,7 @@ def getDateFromBch(bch):
 
 def getCatSpe():
     categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Arzt', 'Handy',
-                    'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung', 'Post',
+                    'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung', 'Kind', 'Post',
                     'Urlaub', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
     return categoryList
 
