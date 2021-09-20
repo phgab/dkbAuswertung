@@ -1,7 +1,7 @@
 import os
 from PySide2 import QtCore, QtWidgets
 from PySide2.QtCore import Signal, Slot
-from PySide2.QtCore import QPoint, Qt, QDateTime, QDate
+from PySide2.QtCore import QPoint, Qt, QDateTime, QDate, QPointF
 from PySide2.QtGui import QPainter, QFont
 from PySide2.QtWidgets import QSizePolicy
 from PySide2.QtCharts import QtCharts
@@ -202,6 +202,8 @@ class PlotWidget(QtCharts.QChartView):
                 maxVal = max(maxVal, max(self.plotData[cat]))
             self.barSets = barSets
             self.catList = catList
+
+            chart.addSeries(barSeries)
         else:
             barSet = QtCharts.QBarSet(legendPlot)
             barSet.append(self.plotData[legendPlot])
@@ -209,7 +211,20 @@ class PlotWidget(QtCharts.QChartView):
             barSeries.append(barSet)
             maxVal = max(self.plotData[legendPlot])
 
-        chart.addSeries(barSeries)
+            chart.addSeries(barSeries)
+
+            # TODO: ADD AVERAGE LINE THAT FUCKING WORKS
+            # lineSeries = QtCharts.QLineSeries()
+            # meanVal = sum(self.plotData[legendPlot]) / len(self.plotData[legendPlot])
+            # # lineSeries.append(0, meanVal)
+            # # lineSeries.append(len(self.plotData[legendPlot]), meanVal+1)
+            # for idx, value in enumerate(self.plotData[legendPlot]):
+            #     lineSeries.append(QPointF(idx, meanVal + idx))
+            # chart.addSeries(lineSeries)
+            # # plots.append(plt.plot(ind, itemDict[itemName], 'k:'))
+            # # lgdNames.append('Mittelwert')
+
+
 
         titleFont = QFont("Sans Serif")
         titleFont.setPointSize(16)

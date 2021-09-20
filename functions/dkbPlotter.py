@@ -14,16 +14,31 @@ def plotExpenses(csvRes):
     ind = np.arange(numElem)
     barWidth = 0.5
 
-    barPlot = []
+    # barPlot = []
+    # for itemName in itemNames:
+    #     print(itemName)
+    #     print(itemDict[itemName])
+    #     barPlot.append(plt.bar(ind, itemDict[itemName], barWidth))
+    #
+    # plt.ylabel('Ausgaben [€]')
+    # plt.title('Monatliche Ausgaben')
+    # plt.xticks(ind, monthList)
+    # plt.legend([p[0] for p in barPlot], itemNames)
+    plots = []
+    lgdNames = []
     for itemName in itemNames:
         print(itemName)
         print(itemDict[itemName])
-        barPlot.append(plt.bar(ind, itemDict[itemName], barWidth))
+        plots.append(plt.bar(ind, itemDict[itemName], barWidth))
+        lgdNames.append(itemName)
+        if len(itemNames) == 1:
+            plots.append(plt.plot(ind, itemDict[itemName], 'k:'))
+            lgdNames.append('Mittelwert')
 
     plt.ylabel('Ausgaben [€]')
     plt.title('Monatliche Ausgaben')
     plt.xticks(ind, monthList)
-    plt.legend([p[0] for p in barPlot], itemNames)
+    plt.legend([p[0] for p in plots], itemNames)
 
     plt.show()
 

@@ -199,7 +199,7 @@ def findCat(window, displayText, miscList):
                     else:
                         identTextStart = 'Die eingegebene Zeichenfolge konnte im Buchungstext nicht gefunden werden! Bitte erneut eingeben\n'
                 else:
-                    break
+                    break #TODO: INSERT ABORT DIALOG WITH RETURN OPTION HERE!
             if ok and catIdent != "":
                 return [1, chosenCat, catIdent] # identifierDict ergänzen
             else:
@@ -289,9 +289,9 @@ def getDateFromBch(bch):
 
 
 def getCatSpe():
-    categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Handy',
-                    'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung',
-                    'Post', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
+    categoryList = ['Supermarkt', 'Essen gehen', 'Drogerie', 'Apotheke', 'Arzt', 'Handy',
+                    'Wohnung', 'Kleidung', 'Miete', 'Transport', 'Versicherung', 'Post',
+                    'Urlaub', 'Geld abheben', 'Monatlich', 'Sonstiges', ignoreText]
     return categoryList
 
 
